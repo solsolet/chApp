@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name" translatable="false">Chapp</string>
+    <string name="accederCliente">Acceder cliente</string>
+    <string name="accederServidor">Acceder Servidor</string>
+    <string name="iniciarServidor">Iniciar Servidor</string>
+    <string name="conectar">Conectar</string>
+    <string name="estadoServidor">Estado Servidor:</string>
+    <string name="chat">Chat:</string>
+    <string name="escribeMensaje">Escribe un mensaje...</string>
+    <string name="enviar">Enviar</string>
+    <string name="estadoCliente">Estado cliente:</string>
+</resources>
