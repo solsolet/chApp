@@ -18,10 +18,10 @@ import java.net.Socket
 class Servidor : AppCompatActivity(){
 
     private lateinit var bindings: ServidorBinding
-    private lateinit var serverSocket : ServerSocket
-    private lateinit var cliente : Socket
-    private lateinit var input: BufferedReader
-    private lateinit var output: PrintWriter
+    private var serverSocket : ServerSocket? = null
+    private var cliente : Socket? = null
+    private var input: BufferedReader? = null
+    private var output: PrintWriter? = null
     val socketServerPORT = 6000     // Puerto fijo del servidor
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,10 +45,10 @@ class Servidor : AppCompatActivity(){
                 withContext(Dispatchers.Main){        // Bloquea por completo el hilo hasta hacerse
                     bindings.tvEstadoServidor.append("Esperando cliente...")
                 }
-                cliente = serverSocket.accept()
+                cliente = serverSocket!!.accept()
                 // Abrir strams i/o
-                input = BufferedReader(InputStreamReader(cliente.getInputStream()))
-                output = PrintWriter(cliente.getOutputStream(), true)
+                input = BufferedReader(InputStreamReader(cliente!!.getInputStream()))
+                output = PrintWriter(cliente!!.getOutputStream(), true)
                 withContext(Dispatchers.Main){
                     bindings.tvEstadoServidor.append("Se ha conectado Cliente")
                 }
@@ -65,18 +65,26 @@ class Servidor : AppCompatActivity(){
         }
     }
     private fun enviarMensaje(){
-        val msg = bindings.etMensajeServidor.text.toString() // Texto que has escrito en "Mensaje"
-        if (msg.isNotEmpty()) {
-            output.println(msg)
-            bindings.tvChat.append("Servidor: $msg\n")      // Se añade al textView del Chat
-            bindings.etMensajeServidor.setText("")          // Borra editText del mensaje
+        GlobalScope.launch(Dispatchers.IO) { // Debe estar en otro hilo o da conflicto por el onClick
+            try {
+                val msg = bindings.etMensajeServidor.text.toString() // Texto que has escrito en "Mensaje"
+                if (msg.isNotEmpty()) {
+                    output?.println(msg)
+                    withContext(Dispatchers.Main) {
+                        bindings.tvChat.append("Servidor: $msg\n")      // Se añade al textView del Chat
+                        bindings.etMensajeServidor.setText("")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
     private suspend fun escucharMensajes(){
         try {
             var line: String?
             while (cliente != null && cliente!!.isConnected) {
-                line = input.readLine()
+                line = input!!.readLine()
                 if (line != null) {
                     withContext(Dispatchers.Main) {
                         bindings.tvChat.append("Cliente: $line\n")

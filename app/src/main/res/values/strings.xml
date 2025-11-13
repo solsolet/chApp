@@ -9,4 +9,5 @@
     <string name="escribeMensaje">Escribe un mensaje...</string>
     <string name="enviar">Enviar</string>
     <string name="estadoCliente">Estado cliente:</string>
+    <string name="escribeIp">Escribe una IP...</string>
 </resources>
