@@ -14,10 +14,13 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         initUI()
     }
+    // INICIAMOS LA INTERFAZ
+    // enlazamos con main_activity.xml
     private fun initUI(){
         bindings = MainActivityBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
+        // botones
         bindings.bAccedeServidor.setOnClickListener { irServidor() }
         bindings.bAccedeCliente.setOnClickListener { irCliente() }
     }

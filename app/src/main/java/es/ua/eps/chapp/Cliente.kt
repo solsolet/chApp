@@ -3,6 +3,7 @@ package es.ua.eps.chapp
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import es.ua.eps.chapp.databinding.ClienteBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -19,35 +20,49 @@ class Cliente : AppCompatActivity() {
     private var socket: Socket? = null
     private var output: PrintWriter? = null
     private var input: BufferedReader? = null
+    private var socketServerPORT = Servidor().getPort()
+    // Adaptador para mejora visual del chat
+    private lateinit var adapter: ChatAdapter
+    private val mensajes = mutableListOf<Mensaje>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        supportActionBar?.title = getString(R.string.cliente)
         initUI()
 
     }
+    // INICIAMOS LA INTERFAZ
+    // enlazamos con cliente.xml
     private fun initUI(){
         bindings = ClienteBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
+        // Adaptador
+        adapter = ChatAdapter(mensajes)
+        bindings.rvChat.adapter = adapter
+        bindings.rvChat.layoutManager = LinearLayoutManager(this)
+
+        // botones
         bindings.bConectar.setOnClickListener { conectar() }
         bindings.bEnviarMensajeCliente.setOnClickListener { enviarMensaje() }
     }
     private fun conectar(){
         val ip = bindings.etIP.text.toString() // IP escrita por cliente
+        // abrimos hilo (corrutina)
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                socket = Socket(ip, 6000)
+                socket = Socket(ip, socketServerPORT)
 
                 input = BufferedReader(InputStreamReader(socket!!.getInputStream()))
                 output = PrintWriter(socket!!.getOutputStream(), true)
                 withContext(Dispatchers.Main) {
-                    bindings.tvEstadoCliente.text = "Conectado con éxito"
+                    bindings.tvEstadoCliente.text = getString(R.string.conectadoExito)
                 }
                 launch(Dispatchers.Default) {   // Tarea en 2o plano (sin interrumpir)
                     escucharMensajes()
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 launch(Dispatchers.Main){
@@ -63,15 +78,13 @@ class Cliente : AppCompatActivity() {
                 line = input?.readLine()
                 if (line != null) {
                     withContext(Dispatchers.Main) {
-                        bindings.tvChat.append("Servidor: $line\n")
+                        adapter.agregarMensaje(Mensaje(line, false)) // false = recibido
+                        bindings.rvChat.scrollToPosition(mensajes.size - 1)
                     }
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                bindings.tvChat.append("Conexión cerrada\n")
-            }
         }
     }
     private fun enviarMensaje(){
@@ -81,7 +94,8 @@ class Cliente : AppCompatActivity() {
                 if (msg.isNotEmpty()) {
                     output?.println(msg)
                     withContext(Dispatchers.Main) {
-                        bindings.tvChat.append("Cliente: $msg\n")
+                        adapter.agregarMensaje(Mensaje(msg, true)) // true = enviado
+                        bindings.rvChat.scrollToPosition(mensajes.size - 1)
                         bindings.etMensajeCliente.setText("")
                     }
                 }
@@ -97,6 +111,5 @@ class Cliente : AppCompatActivity() {
         input?.close()
         output?.close()
         socket?.close()
-        //serverSocket?.close()
     }
 }

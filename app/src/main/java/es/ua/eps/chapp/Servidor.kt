@@ -3,6 +3,7 @@ package es.ua.eps.chapp
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import es.ua.eps.chapp.databinding.ServidorBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -23,17 +24,28 @@ class Servidor : AppCompatActivity(){
     private var input: BufferedReader? = null
     private var output: PrintWriter? = null
     val socketServerPORT = 6000     // Puerto fijo del servidor
+    private lateinit var adapter: ChatAdapter
+    private val mensajes = mutableListOf<Mensaje>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        supportActionBar?.title = getString(R.string.servidor)
         initUI()
-
     }
+    // INICIAMOS LA INTERFAZ
+    // enlazamos con servidor.xml
     private fun initUI(){
         bindings = ServidorBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
+        // Burbujas de chat
+        adapter = ChatAdapter(mensajes)
+        bindings.rvChat.adapter = adapter
+        bindings.rvChat.layoutManager = LinearLayoutManager(this)
+
+        // botones
         bindings.bIniciarServidor.setOnClickListener { initServidor() }
         bindings.bEnviarMensajeServidor.setOnClickListener { enviarMensaje() }
     }
@@ -46,7 +58,7 @@ class Servidor : AppCompatActivity(){
                     bindings.tvEstadoServidor.append("Esperando cliente...")
                 }
                 cliente = serverSocket!!.accept()
-                // Abrir strams i/o
+                // Abrir streams i/o
                 input = BufferedReader(InputStreamReader(cliente!!.getInputStream()))
                 output = PrintWriter(cliente!!.getOutputStream(), true)
                 withContext(Dispatchers.Main){
@@ -70,8 +82,13 @@ class Servidor : AppCompatActivity(){
                 val msg = bindings.etMensajeServidor.text.toString() // Texto que has escrito en "Mensaje"
                 if (msg.isNotEmpty()) {
                     output?.println(msg)
+//                    withContext(Dispatchers.Main) {
+//                        bindings.tvChat.append("Servidor: $msg\n")      // Se añade al textView del Chat
+//                        bindings.etMensajeServidor.setText("")
+//                    }
                     withContext(Dispatchers.Main) {
-                        bindings.tvChat.append("Servidor: $msg\n")      // Se añade al textView del Chat
+                        adapter.agregarMensaje(Mensaje(msg, true)) // true = enviado
+                        bindings.rvChat.scrollToPosition(mensajes.size - 1)
                         bindings.etMensajeServidor.setText("")
                     }
                 }
@@ -86,18 +103,26 @@ class Servidor : AppCompatActivity(){
             while (cliente != null && cliente!!.isConnected) {
                 line = input!!.readLine()
                 if (line != null) {
+//                    withContext(Dispatchers.Main) {
+//                        bindings.tvChat.append("Cliente: $line\n")
+//                    }
                     withContext(Dispatchers.Main) {
-                        bindings.tvChat.append("Cliente: $line\n")
+                        adapter.agregarMensaje(Mensaje(line, false)) // false = recibido
+                        bindings.rvChat.scrollToPosition(mensajes.size - 1)
                     }
+
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                bindings.tvChat.append("Conexión cerrada\n")
+                //bindings.tvChat.append("Conexión cerrada\n")
+                //bindings.rvChat.append("Conexión cerrada\n")
             }
         }
     }
-    //public fun getPort() : Int{ return socketServerPort }
+    fun getPort() : Int {
+        return socketServerPORT
+    }
 
 }
