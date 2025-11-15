@@ -14,10 +14,12 @@ class ChatAdapter(private val mensajes: MutableList<Mensaje>)
         private const val TIPO_RECIBIDO = 2
     }
 
+    // Determina si un mensaje es enviado o recibido asi el Recycler view sabe que burubuja poner
     override fun getItemViewType(position: Int): Int {
         return if (mensajes[position].esEnviado) TIPO_ENVIADO else TIPO_RECIBIDO
     }
 
+    // Crea ViewHolder adecuado segun el tipo
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return if (viewType == TIPO_ENVIADO) {
             val view = LayoutInflater.from(parent.context)
@@ -32,12 +34,14 @@ class ChatAdapter(private val mensajes: MutableList<Mensaje>)
 
     override fun getItemCount() = mensajes.size
 
+    // Asigna el texto del mensaje al ViewHolder
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val msg = mensajes[position]
         if (holder is EnviadoViewHolder) holder.bind(msg.texto)
         else if (holder is RecibidoViewHolder) holder.bind(msg.texto)
     }
 
+    // Agrega mensaje al final de la lista, refresca automaticamente el chat
     fun agregarMensaje(m: Mensaje) {
         mensajes.add(m)
         notifyItemInserted(mensajes.size - 1)

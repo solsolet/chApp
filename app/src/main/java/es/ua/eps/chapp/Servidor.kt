@@ -35,29 +35,31 @@ class Servidor : AppCompatActivity(){
         initUI()
     }
     // INICIAMOS LA INTERFAZ
-    // enlazamos con servidor.xml
+    // Infla el layout con servidor.xml
     private fun initUI(){
         bindings = ServidorBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
-        // Burbujas de chat
+        // Configura recyclerView
         adapter = ChatAdapter(mensajes)
         bindings.rvChat.adapter = adapter
         bindings.rvChat.layoutManager = LinearLayoutManager(this)
 
-        // botones
+        // botones con listeners
         bindings.bIniciarServidor.setOnClickListener { initServidor() }
         bindings.bEnviarMensajeServidor.setOnClickListener { enviarMensaje() }
     }
+    // la funcion mas importante: pone en marcha el chat
+    // Comunicacion del Socket
     fun initServidor(){
-        // Abrimos hilo (corrutina)
-        GlobalScope.launch(Dispatchers.IO) {   // Tareas Entrada/Salida
+        // Abrimos hilo (corrutina) = evita bloqueo del main thread
+        GlobalScope.launch(Dispatchers.IO) {
             try {
-                serverSocket = ServerSocket(socketServerPORT)
-                withContext(Dispatchers.Main){        // Bloquea por completo el hilo hasta hacerse
+                serverSocket = ServerSocket(socketServerPORT) // escucha al puerto 6000
+                withContext(Dispatchers.Main){             // Bloquea por completo el hilo hasta hacerse
                     bindings.tvEstadoServidor.append("Esperando cliente...")
                 }
-                cliente = serverSocket!!.accept()
+                cliente = serverSocket!!.accept()   // se bloquea hasta que el cliente se conecta
                 // Abrir streams i/o
                 input = BufferedReader(InputStreamReader(cliente!!.getInputStream()))
                 output = PrintWriter(cliente!!.getOutputStream(), true)
@@ -77,19 +79,17 @@ class Servidor : AppCompatActivity(){
         }
     }
     private fun enviarMensaje(){
-        GlobalScope.launch(Dispatchers.IO) { // Debe estar en otro hilo o da conflicto por el onClick
+        GlobalScope.launch(Dispatchers.IO) { // Debe estar en otro hilo o da conflicto por el onClick (evita NetworkOnMainThread)
             try {
                 val msg = bindings.etMensajeServidor.text.toString() // Texto que has escrito en "Mensaje"
                 if (msg.isNotEmpty()) {
-                    output?.println(msg)
-//                    withContext(Dispatchers.Main) {
-//                        bindings.tvChat.append("Servidor: $msg\n")      // Se añade al textView del Chat
-//                        bindings.etMensajeServidor.setText("")
-//                    }
+                    output?.println(msg)    // envia al cliente
+
+                    // Actualiza RecyclerView
                     withContext(Dispatchers.Main) {
                         adapter.agregarMensaje(Mensaje(msg, true)) // true = enviado
                         bindings.rvChat.scrollToPosition(mensajes.size - 1)
-                        bindings.etMensajeServidor.setText("")
+                        bindings.etMensajeServidor.setText("") // borra editTex mensaje
                     }
                 }
             } catch (e: Exception) {
@@ -97,32 +97,25 @@ class Servidor : AppCompatActivity(){
             }
         }
     }
+    // Escucha mientras el cliente este conectadof
     private suspend fun escucharMensajes(){
         try {
             var line: String?
             while (cliente != null && cliente!!.isConnected) {
                 line = input!!.readLine()
                 if (line != null) {
-//                    withContext(Dispatchers.Main) {
-//                        bindings.tvChat.append("Cliente: $line\n")
-//                    }
+
                     withContext(Dispatchers.Main) {
                         adapter.agregarMensaje(Mensaje(line, false)) // false = recibido
                         bindings.rvChat.scrollToPosition(mensajes.size - 1)
                     }
-
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                //bindings.tvChat.append("Conexión cerrada\n")
-                //bindings.rvChat.append("Conexión cerrada\n")
-            }
         }
     }
     fun getPort() : Int {
         return socketServerPORT
     }
-
 }

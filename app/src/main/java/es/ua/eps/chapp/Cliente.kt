@@ -20,7 +20,7 @@ class Cliente : AppCompatActivity() {
     private var socket: Socket? = null
     private var output: PrintWriter? = null
     private var input: BufferedReader? = null
-    private var socketServerPORT = Servidor().getPort()
+    private var socketServerPORT = 6000
     // Adaptador para mejora visual del chat
     private lateinit var adapter: ChatAdapter
     private val mensajes = mutableListOf<Mensaje>()
@@ -53,10 +53,12 @@ class Cliente : AppCompatActivity() {
         // abrimos hilo (corrutina)
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                socket = Socket(ip, socketServerPORT)
+                socket = Socket(ip, socketServerPORT) // intenta conectar el socjet al servidor
 
+                // Streams E/S
                 input = BufferedReader(InputStreamReader(socket!!.getInputStream()))
                 output = PrintWriter(socket!!.getOutputStream(), true)
+                // Actualiza estado
                 withContext(Dispatchers.Main) {
                     bindings.tvEstadoCliente.text = getString(R.string.conectadoExito)
                 }
@@ -75,8 +77,9 @@ class Cliente : AppCompatActivity() {
         try {
             var line: String?
             while (socket != null && socket!!.isConnected) {
-                line = input?.readLine()
+                line = input?.readLine() // Lee lineas entrantes
                 if (line != null) {
+                    // Muestra en el RecyclerView
                     withContext(Dispatchers.Main) {
                         adapter.agregarMensaje(Mensaje(line, false)) // false = recibido
                         bindings.rvChat.scrollToPosition(mensajes.size - 1)
@@ -87,12 +90,14 @@ class Cliente : AppCompatActivity() {
             e.printStackTrace()
         }
     }
+    // Funciona igual que en el servidor
     private fun enviarMensaje(){
         GlobalScope.launch(Dispatchers.IO) {
             try {
                 val msg = bindings.etMensajeCliente.text.toString()
                 if (msg.isNotEmpty()) {
-                    output?.println(msg)
+                    output?.println(msg)    // Envia texto
+                    // Actualiza UI
                     withContext(Dispatchers.Main) {
                         adapter.agregarMensaje(Mensaje(msg, true)) // true = enviado
                         bindings.rvChat.scrollToPosition(mensajes.size - 1)
@@ -104,7 +109,7 @@ class Cliente : AppCompatActivity() {
             }
         }
     }
-
+    // Cierra Conexiones y streams para evitar memoria fildrada o sockets abiertos
     override fun onDestroy() {
         super.onDestroy()
         GlobalScope.launch(Dispatchers.IO){}.cancel()
