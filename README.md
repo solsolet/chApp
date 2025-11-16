@@ -4,7 +4,7 @@ En esta entrega figuran los siguientes archivos:
 - Demos: 2 vídeos del primer funcionamiento de la aplicación y el resultado final.
 - README: este mismo documento explicando la entrega.
 - APK: aplicación compilada lista para instalar.
-- Presentación: está a medias por que no me ha dado tiempo a acabarla, pero en GitHub se actualizará.
+- Presentación: disponible en GitHub como "chapp-presetacion". En las notas aparece el guion que se habría explicado.
 
 ## Especificaciones
 Este proyecto de ha probado con dos móviles Android:

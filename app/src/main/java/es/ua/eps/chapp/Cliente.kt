@@ -25,7 +25,6 @@ class Cliente : AppCompatActivity() {
     private lateinit var adapter: ChatAdapter
     private val mensajes = mutableListOf<Mensaje>()
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -53,7 +52,7 @@ class Cliente : AppCompatActivity() {
         // abrimos hilo (corrutina)
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                socket = Socket(ip, socketServerPORT) // intenta conectar el socjet al servidor
+                socket = Socket(ip, socketServerPORT) // intenta conectar el socket al servidor
 
                 // Streams E/S
                 input = BufferedReader(InputStreamReader(socket!!.getInputStream()))
